@@ -54,7 +54,7 @@ def generate_frames():
         yield(b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
         
-        
+        # time.sleep(0.01)
 
         # Exit if the user presses the 'q' key
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -77,9 +77,11 @@ def video():
 if __name__=="__main__":
     
     # app.run(debug=True)
-
+    print('Server started on 5000')
     t = threading.Thread(socketio.run(app, host='0.0.0.0', port=5000))
     t.start()
+
+    
 
     # app.run(debug=True)
     # socketio.start_background_task(capture_frames)
