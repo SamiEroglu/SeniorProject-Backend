@@ -4,6 +4,7 @@
 /node_modules
 /.pnp
 .pnp.js
+the_best_model.h5
 
 # testing
 /coverage
