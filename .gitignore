@@ -5,6 +5,8 @@
 /.pnp
 .pnp.js
 the_best_model.h5
+asl_99.48.h5
+melem_model.h5
 
 # testing
 /coverage
