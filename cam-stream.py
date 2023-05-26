@@ -1,13 +1,14 @@
 from flask import Flask, render_template, Response
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
+import socketio
 import cv2
 # import time
 import threading
 import mediapipe as mp
 import numpy as np
-
 from tensorflow import keras
+import requests
 
 app = Flask(__name__)
 CORS(app)
@@ -36,8 +37,6 @@ def process_image(img):
 
     return processed_img
 
-
-
 # Initialize the Mediapipe Holistic solution
 mp_holistic = mp.solutions.holistic
 holistic = mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5)
@@ -56,12 +55,12 @@ def generate_frames():
         image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         # Detect the hand landmarks using Holistic
-        results = holistic.process(image)
+        # results = holistic.process(image)
         
-        if results.right_hand_landmarks or results.left_hand_landmarks:
-            mp_drawing = mp.solutions.drawing_utils
-            mp_drawing.draw_landmarks(frame, results.right_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
-            mp_drawing.draw_landmarks(frame, results.left_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
+        # if results.right_hand_landmarks or results.left_hand_landmarks:
+        #     mp_drawing = mp.solutions.drawing_utils
+        #     mp_drawing.draw_landmarks(frame, results.right_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
+        #     mp_drawing.draw_landmarks(frame, results.left_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
 
         # Pass the frame to the image processing function
         processed_img = process_image(frame)
@@ -70,7 +69,7 @@ def generate_frames():
         predictions = model.predict(processed_img)
 
         image_class = labels[np.argmax(predictions[0])]
-        print("Image class :", image_class)
+        # print("Image class :", image_class)
 
         # Display the predicted label on the frame
         font = cv2.FONT_HERSHEY_SIMPLEX
@@ -82,11 +81,15 @@ def generate_frames():
         ret,buffer=cv2.imencode('.jpg',frame)
         frame=buffer.tobytes()
 
+        # Send a message to the server
+        # send image class to localhost:4000/imageClass via post
+        url = 'http://localhost:4000/imageClass'
+        data = {'imageClass': str(image_class)}
+        response = requests.post(url, data=data)
 
         yield(b'--frame\r\n'
             b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-        
         # Exit if the user presses the 'q' key
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -96,6 +99,10 @@ def generate_frames():
 def data(data):
     print('Received data:', data)
 
+# socket on data
+@socketio.on('imageClass')
+def imageClass(data):
+    print('Received imageClass:', data)
 
 @app.route('/')
 def index():

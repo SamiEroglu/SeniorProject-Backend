@@ -1,42 +1,55 @@
-const express = require("express");
+const express = require('express');
 const app = express();
-const cors = require("cors");
-const http = require("http").Server(app);
-const PORT = 4000;
-const socketIO = require("socket.io")(http, {
-  cors: {
-    origin: "http://localhost:3000",
-  },
+const cors = require('cors');
+const http = require('http').Server(app);
+const bodyParser = require('body-parser');
+const socketIO = require('socket.io')(http, {
+	cors: {
+		origin: 'http://localhost:3000',
+	},
 });
+
+const PORT = 4000;
 
 app.use(cors());
+
+// Configure body-parser middleware
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
 let users = [];
 
-socketIO.on("connection", (socket) => {
-  console.log(`⚡: ${socket.id} user just connected!`);
-  socket.on("message", (data) => {
-    socketIO.emit("messageResponse", data);
-  });
+socketIO.on('connection', (socket) => {
+	console.log(`⚡: ${socket.id} user just connected!`);
+	socket.on('message', (data) => {
+		socketIO.emit('messageResponse', data);
+	});
 
-  socket.on("typing", (data) => socket.broadcast.emit("typingResponse", data));
+	socket.on('typing', (data) => socket.broadcast.emit('typingResponse', data));
 
-  socket.on("newUser", (data) => {
-    users.push(data);
-    socketIO.emit("newUserResponse", users);
-  });
+	socket.on('newUser', (data) => {
+		users.push(data);
+		socketIO.emit('newUserResponse', users);
+	});
 
-  socket.on("disconnect", () => {
-    console.log("🔥: A user disconnected");
-    users = users.filter((user) => user.socketID !== socket.id);
-    socketIO.emit("newUserResponse", users);
-    socket.disconnect();
-  });
+	socket.on('disconnect', () => {
+		console.log('🔥: A user disconnected');
+		users = users.filter((user) => user.socketID !== socket.id);
+		socketIO.emit('newUserResponse', users);
+		socket.disconnect();
+	});
 });
 
-app.get("/api", (req, res) => {
-  res.json({ message: "Hello" });
+app.get('/api', (req, res) => {
+	res.json({ message: 'Hello' });
+});
+
+app.post('/imageClass', (req, res) => {
+	socketIO.emit('imageClass', req.body.imageClass);
+
+	res.json({ message: req.body });
 });
 
 http.listen(PORT, () => {
-  console.log(`Server listening on ${PORT}`);
+	console.log(`Server listening on ${PORT}`);
 });
